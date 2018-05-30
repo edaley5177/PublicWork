@@ -1,9 +1,0 @@
-THESE are the things that need to be worked on... 
-IN ORDER OF PRIORITY
-use this link for job experience student caller http://www.mtu.edu/magazine/2015-2/stories/906-callers/
-use this link for course descriptions on languages and environments page http://www.mtu.edu/catalog/courses/
-make the download resume link look and behave like a link
-make email a mail-to link
-Pick a good background color
-Put more space between navbar and heading on home page
-Fix resume link so it keeps me on home page when clicked
