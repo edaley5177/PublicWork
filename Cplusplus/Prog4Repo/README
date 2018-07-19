@@ -1,0 +1,158 @@
+// -----------------------------------------------------------  
+// NAME: Eamonn Daley                         User ID: edaley  
+// DUE DATE: 04/06/2018
+// PROGRAM ASSIGNMENT 4                   
+// FILE NAME: README (your unix file name)     
+// PROGRAM PURPOSE:  
+//    explain why my program works and answer questions about it       
+//----------------------------------------------------------- 
+
+
+The logic of my program:
+
+My program will read 3 command line arguments in, all are integers >=0. The
+first command line argument is the total number of elves, if this is 0, then it
+will be assigned a default value of 7. The second command line argument is the
+total number of reindeer that go on santa's sleigh, if this number is 0, then it
+will be set to 9 by default. The third command line argument is the total number
+of times santa will leave the north pole and deliver toys before retiring, if
+this is 0, then it is set to 5 by defalut. My main program reads the three
+arguments and stores them in local variables. Next it creates and begins one
+santa thread. It then creates and begins all of the elf threads, and makes and
+begins all the reindeer threads. The main program then just waits to join with
+the santa thread and and then exits.
+
+The santa thread follws this pattern: Santa sleeps first with function Sleep(),
+which means he is blocked until three elves ask questions, or the last reindeer
+wakes him up. Santa always takes care the reindeers first. If Santa is wakened
+up by the last reindeer, he releases all waiting reindeers. Santa waits until
+all reindeers are there. Then, he attaches the reindeer to the sleigh. After the
+sleigh is attached, Santa and reindeers fly off. While santa is out delivering
+toys, elves must wait until he gets back to ask a question. On the other hand,
+if Santa is wakened up by elves, he takes some time to solve the problem, and
+releases all three elves, then goes back to sleep until he is woken up again. He
+repeats this process until he gets back from his last trip to deliver toys then
+retires.
+
+The reindeer thread follows this pattern:  Reindeers come back one by one. When
+it comes back, it increments the variable totDeerBack to register that it has
+returned. Then it checks if it was the last one to return, if so it wakes up
+santa. If not, it waits for the other reindeers. Next, all reindeers call
+WaitSleigh(), waiting to be attached to a sleigh. Again, all reindeers act as a
+single group. Once this step completes, all reindeers fly off as a single group
+to deliver toys. Then once they return they are all realeased to go on vacation.
+The reason reindeer run so much faster than elves is because elf threads must
+wait on 3 mutexes and reindeer only wait on one. The reindeer only use one
+global variable while the elves use 3.
+
+The elf thread follows this pattern: It delays to simulate taking time to make
+toys. Then it will ask santa a question. When an elf has a question, it
+increases the number of elves waiting and if it is the third to ask a question,
+then all three elves will wake up santa, and wait to be released once their
+question is answered. If an elf asks a question while santa is either on a trip
+delivering toys, or answering other elves questions, then it must wait until
+santa completes that task before asking a question. The elves are very slow in
+getting their question answered. Some times the reindeer go on vacation and all
+comeback before the elves get their question answered. This is because when an
+elf stops making toys, it waits for 3 mutexes to be unlocked, then it will lock
+them and  simulate asking a question. While the reindeer only wait on one mutex
+lock.
+
+
+
+Why does my program work:  In general, my program works because I have a
+different mutex lock set up for each global variable in the thread
+implementation file. By doing this, I lock each use or decloration of the global
+variables within a mutex block so that only one thread can use it at a time. I
+have a sempaphore set up for the elves and the reindeer, so that santa can
+release them one by one. I use the structure that is required in the program
+description. The methods in thread-support.cpp are used to print to the console.
+I use sprintf and write methods so the output is organized and printed as
+expected.
+
+
+
+
+Specific Questions: Question 1:How do you guarantee that only three elves will
+ask questions?
+
+eInd starts at Zero, anytime a thread checks the current value, or changes the
+value in anyway, it is blocked in the mutex lock mutexInd. Which is used
+exclusively when modifying or checking the variable eInd.
+
+
+Question 2: Show that why no elf will leave before the question is answered.
+
+When the third elf asks a question, it will signal the santa semaphore to wake
+up the santa, then it waits, until the elf semaphore is released by santa. The
+only thread that signals the elf semaphore is the santa thread so each elf won't
+be allowed to continure until santa finishes answering questions and releases
+each elf.
+
+Question 3: Show that while 3 elves are waiting, no other elves can cut in and
+ask questions.
+
+The first mtuex an elf thread locks, is elfMutex, which is used exclusively by
+elf threads. Each elf will only unlock this mutex after checking to see if it is
+the third elf. If it is the third elf, then it asks a question, and the santa
+thread will release each elf individually. When an elf thread is signaled, it
+checks to see if it is the last one to be released, if it is, then it releases
+that mutex lock so other elves can ask questions again. If it is not the third
+elf, it unlocks this mutex, allowing more elves to ask questons.
+
+Question 4: How do you guarantee that santa only answers a question while he is
+not sleeping.
+
+When santa goes to sleep, that means that he is waiting for the santaSemaphore
+to be signaled. Once it is signaled by an elf, santa will wake up and answer the
+question. This semaphore is only signaled when one of two events occurs, either
+the last reindeer comes back from vacation, or a third elf asks a question.
+
+Question 5: Show that when santa is woken up by a reindeer, this reindeer is the
+last one coming back from vacation.
+
+After coming back from vacation, a reindeer thread will lock the mutex lock
+mutexDB, which is used exclusively when accessing the shared resource
+totDeerBack, then increase the current value by one and check if the current
+value is equal to the total number of reindeer. Each reindeer thread stores the
+total number of reindeer in a private variable.  If it is not the last reindeer
+back, then it waits to go on the sleigh. If it is the last reindeer, then it
+will signal the santa semaphore to wake him up.
+
+Question 6: How do you make sure that Santa always handles reindeer first?
+
+When santa wakes up from his nap, that means the santa semaphore was signaled.
+The first thing he does is lock a few mutexes for global variables that he will
+use, then he checks if the number of reindeer back is equal to the total number
+of reindeer. If it is, then he attaches the reindeer to the sleigh, and goes on
+a trip to deliver toys. Otherwise if the number of elves waiting is equal to 3
+santa will answer questions.
+
+Question 7: Show that while Santa is attaching the Sleigh and delivering toys,
+all reindeer are there. They won't sneak out for vacation.
+
+After getting back from vacation, and locking mutexDB, changing the variable
+totDeerBack to alert that it came back, , and then waking up santa if
+neccessary,then unlock mutexDB, a reindeer thread will wait until the semaphore
+deerSem is signaled. The only threads that wait on this semaphore are reindeer.
+The only thread that will signal it is the santa thread. The santa thread does
+not signal this semaphore until he returns from a trip. When he gets back, he
+will signal this semaphore once for each reindeer. When a reindeer gets back he
+locks the mutex lock mutexDB he can't change the vairable to register that he's
+back from vacation until that mutex is unlocked by either another reindeer that
+is currently using it, or santa unlocks it when he is done releasing all
+reindeer baack to vacation.
+
+Question 8: Show that while Santa is attaching the sleigh and delivering toys,
+elves will not ask questions.
+
+When the third elf asks a question, it will signal the santa semaphore. If santa
+is currently attaching the sleigh, or delivering toys, he will finish that
+before coming back and taking a nap agian. The santa thread will not wait on the
+santaSemaphore again until he gets back from delivering toys, and releases all
+reindeer. If the three elves go to wake up santa, and he is currently out
+delivering toys, they will have to wait until he returns to get their question
+answered. They know that he returns when the santa thread calls wait on the
+santaSemaphore.
+
+ 

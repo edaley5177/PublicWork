@@ -1,0 +1,77 @@
+// -----------------------------------------------------------  
+// NAME: Eamonn Daley                         User ID: edaley  
+// DUE DATE: 04/20/2018
+// PROGRAM ASSIGNMENT 5                   
+// FILE NAME: README (your unix file name)     
+// PROGRAM PURPOSE:  
+//    explain why my program works and answer questions about it       
+//----------------------------------------------------------- 
+
+Here is the url to the assignment page
+http://www.csl.mtu.edu/cs3331.ck/www/PROG/PG5/prog5.html
+
+The logic of my program:
+
+My program will read 3 command line arguments in, all are integers >=0. The
+first command line argument is the total number of elves, if this is 0, then it
+will be assigned a default value of 7. The second command line argument is the
+total number of reindeer that go on santa's sleigh, if this number is 0, then it
+will be set to 9 by default. The third command line argument is the total number
+of times santa will leave the north pole and deliver toys before retiring, if
+this is 0, then it is set to 5 by defalut. My main program reads the three
+arguments and stores them in local variables. Next it creates and begins one
+santa thread. It then creates and begins all of the elf threads, and makes and
+begins all the reindeer threads. The main program then just waits to join with
+the santa thread and and then exits.
+
+The santa thread follws this pattern: Santa sleeps first with function Sleep(),
+which means he is blocked until three elves ask questions, or the last reindeer
+wakes him up. Santa always takes care the reindeers first. If Santa is wakened
+up by the last reindeer, he releases all waiting reindeers. Santa waits until
+all reindeers are there. Then, he attaches the reindeer to the sleigh. After the sleigh is attached, Santa and reindeers fly off. While santa is out delivering toys, elves must wait until he gets back to ask a question. On the other hand, if Santa is wakened up by elves, he takes some time to solve the problem, and releases all three elves, then goes back to sleep until he is woken up again. He repeats this process until he gets back from his last trip to deliver toys then retires.
+
+The reindeer thread follows this pattern:  Reindeers come back one by one. When
+it comes back, it first mutst wait for santa to be asleep before registering that it's back, this is to make sure the last reindeer wakes up santa when he is acutally asleep, then it increments the variable totDeerBack to register that it has returned. Then it checks if it was the last one to return, if so it wakes up santa. If not, it waits for the other reindeers. Next, all reindeers call
+WaitSleigh(), waiting to be attached to a sleigh. Again, all reindeers act as a
+single group. Once this step completes, all reindeers fly off as a single group
+to deliver toys. Then once they return they are all realeased to go on vacation. 
+
+The elf thread follows this pattern: It delays to simulate taking time to make
+toys. Then it will ask santa a question. When an elf has a question, he must first wait for santa to be asleep before registering that he has a question, this is to make sure an elf won't try to signal santa when he is awake, then he
+increases the number of elves waiting and if he is the third to ask a question,
+then all three elves will wake up santa, and wait to be released once their
+question is answered.
+
+Why does your program work?
+Mainly my program works because I have santa treated as a shared resouce. If a thread ever needs to wake up santa, then that thread must wait until santa is asleep before signaling santa. Also santa doesn't give up the montior until he finishes delivering toys and/or helping elves
+
+Question 1: How do you garuntee that only 3 elves will ask Questions?
+
+I block any elves that try to ask a question while santa is up. This way they wait until the last elf signals them that santa is asleep, so now they can ask their question.
+
+Question 2: Show why no elf will leave before the questions are answered.
+
+When the first two elves ask a question, all they do is increase the counter and wait for santa to release them. The third elf will increase the counter and then signal santa to wake him up, and wait for santa to release him before continuing. Either way they wait on santa to release them before leaving
+
+Question 3: Show that while three elves are waiting for an answer, no other elves can cut in and ask questions.
+
+Once santa is woken up, he will set santa up to 1 so any elves that try to ask a question will have to wait until they are signaled that he is asleep to continue
+
+Question 4: How do you guarantee that Santa only answers question while he is not sleeping.
+
+If an elf tries to ask a question, then he first is forced to check if santa is up, if so, then he is forced to wait until santa is asleep to ask his question. I use the one condition variable, santaAv to do this
+
+Question 5: Show that when Santa is wakened up by a reindeer, this reindeer is the last one coming back from vacation.
+
+When a reindeer gets back from vacation, it increases the counter checks to see if it is the last one, aka deerBack == totDeer, then signals santa if so and waits to be released by santa, otherwise it waits in the warming hut to be released by santa.
+
+Question 6: How do you make sure that Santa always handles reindeers first.
+When santa wakes up, he checks to see if all the reindeer are back, if so, he delivers toys, then he checks to see if 3 elves have questions, if so, he answers them.
+
+Question 7: Show that while Santa is attaching the sleigh and delivering toys, all reindeers are there. They won't sneak out for vacation.
+
+Once a reindeer gets back from vacation, it is either the last one in which case it wakes up santa and then waits to be released on vacation by santa, or it is not the last one in which case it waits in the warming hut to be released by santa, after it comes out of the warming hut, it waits to be released on vacation by santa
+
+Question 8: Show that while Santa is attaching the sleigh and delivering toys, elves will not ask questions.
+
+If an elf has a question, he first must check if santa is up, if so he must wait unitl he is signaled that santa is asleep before asking his question 
